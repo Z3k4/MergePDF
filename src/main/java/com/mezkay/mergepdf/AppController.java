@@ -1,32 +1,21 @@
 package com.mezkay.mergepdf;
 
 
-import javafx.collections.ListChangeListener;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.attribute.FileTime;
-import java.text.Collator;
-import java.util.*;
-
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 public class AppController implements Initializable {
 
@@ -67,18 +56,40 @@ public class AppController implements Initializable {
     private PDFEditor pdfEditor;
     private ArrayList<File> listPages = new ArrayList<>();
 
+    private ListView statutList;
+
+    @FXML
+    private RadioButton singlePageRadioBtn;
+    @FXML
+    private RadioButton doublePageRadioBtn;
+
+    @FXML
+    private TextField outputDirectory;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        this.statutList = new ListView();
+        this.statutList.setPrefHeight(200);
+        this.statutList.setPrefWidth(430);
+
+        ToggleGroup toggleGroup = new ToggleGroup();
+        singlePageRadioBtn.setToggleGroup(toggleGroup);
+        doublePageRadioBtn.setToggleGroup(toggleGroup);
+
+        singlePageRadioBtn.setSelected(true);
+
+        foundFilesPane.getChildren().add(this.statutList);
+
         pdfEditor = new PDFEditor(statutLabel, foundFilesPane);
-        System.out.println("ok");
+
 
     }
 
     @FXML
-    protected void chooseOutput() {
+    protected void chooseOutputFile() {
         FileChooser.ExtensionFilter extensionFilter = new FileChooser.ExtensionFilter("PDF (*.pdf)", "*.pdf");
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(new File("C:\\Users\\kamel\\Pictures\\Koezio"));
+        fileChooser.setInitialDirectory(new File(System.getenv("USERPROFILE")));
         fileChooser.getExtensionFilters().add(extensionFilter);
         File file = fileChooser.showSaveDialog(windows);
 
@@ -88,10 +99,22 @@ public class AppController implements Initializable {
     }
 
     @FXML
+    protected void chooseOutputFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setInitialDirectory(new File(System.getenv("USERPROFILE") + "\\Documents"));
+        File file = directoryChooser.showDialog(windows);
+
+        if (file!=null) {
+            outputDirectory.setText(file.getAbsolutePath());
+        }
+    }
+
+
+    @FXML
     protected void chooseFolder() throws IOException {
 
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File("C:\\Users\\kamel\\Pictures\\Koezio"));
+        directoryChooser.setInitialDirectory(new File(System.getenv("USERPROFILE") + "\\Documents"));
         File file = directoryChooser.showDialog(windows);
 
         if(file != null) {
@@ -114,15 +137,34 @@ public class AppController implements Initializable {
             i++;
         }
         if(selectedIndex == 0) {
-            //this.pdfEditor.combineFiles(textPath.getText(), outputFile.getText());
+
+            this.pdfEditor.combineFiles(textPath.getText(), outputFile.getText(), null, this.singlePageRadioBtn.isSelected());
         } else if(selectedIndex == 1) {
         }else if (selectedIndex == 2) {
-            WebsiteSource websource = new WebsiteSource(websiteSource.getText(),"test.pdf", minChapter.getText(), maxChapter.getText(), minPage.getText(), maxPage.getText());
 
-            this.pdfEditor.combineFiles("", outputFile.getText(), websource.getAllImages());
-            statutLabel.textProperty().bind(websource.getStatutProperty());
+            WebsiteSource websource = new WebsiteSource(this, websiteSource.getText(),"test.pdf", minChapter.getText(), maxChapter.getText(), minPage.getText(), maxPage.getText());
 
-        }
+            statutLabel.setText("Downloading files..");
+            websource.getStatutProperty().addListener(new ChangeListener<String>() {
+                @Override
+                public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+                    statutList.getItems().add(observableValue.getValue());
+                }
+            });
+
+            websource.run();
+            websource.onSucceededProperty().addListener(new ChangeListener() {
+                @Override
+                public void changed(ObservableValue observableValue, Object o, Object t1) {
+                    try {
+                        pdfEditor.combineFiles("", outputFile.getText(), websource.getImagesPath(), singlePageRadioBtn.isSelected());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        };
+
     }
 
     @FXML
@@ -149,6 +191,20 @@ public class AppController implements Initializable {
     public void setStage(Stage stage) {
         this.rootStage = stage;
         this.windows = this.rootStage.getScene().getWindow();
+    }
+
+    public File getOutputDirectory() {
+        File directory = new File(this.outputDirectory.getText());
+
+        if(directory.exists()) {
+            return directory;
+        }
+
+        return null;
+    }
+
+    public PDFEditor getPdfEditor() {
+        return this.pdfEditor;
     }
 
 }

@@ -1,6 +1,5 @@
 package com.mezkay.mergepdf;
 
-import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
@@ -13,16 +12,17 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 
 public class PDFEditor {
 
-    private ArrayList<File> listPages;
+    private ArrayList<Integer> listPages;
     private PDDocument loadedDocument;
 
 
     private Label statutLabel;
     private Pane foundFilesPane;
+    private String pathToFile;
 
     public PDFEditor(Label statutLabel, Pane filesPane) {
         this.listPages = new ArrayList<>();
@@ -34,10 +34,12 @@ public class PDFEditor {
     }
 
 
-    private void newPDPage(File file) throws IOException {
-        PDImageXObject pdImage = PDImageXObject.createFromFile(file.getAbsolutePath(), this.loadedDocument);
 
-        if(pdImage.getWidth() > 1000) {
+    private void newPDPage(File file, Boolean singlePageMode) throws IOException {
+        PDImageXObject pdImage = PDImageXObject.createFromFile(file.getAbsolutePath(), this.loadedDocument);
+        System.out.println("Adding " + file.getName());
+
+        if(!singlePageMode) {
             PDRectangle rectSize = new PDRectangle(pdImage.getWidth() / 2, pdImage.getHeight());
 
             //Create first page and cut
@@ -76,19 +78,39 @@ public class PDFEditor {
 
             //Second page
 
+
             contents.close();
+            this.loadedDocument.addPage(newPage);
+
+            System.out.println("Page " + file.getName() + " merged!");
         }
 
     };
 
-    public void combineFiles(String path, String outPath, ObservableList<File> allPages) throws IOException {
+    public void combineFiles(String path, String outPath, ArrayList<Integer> allPages, Boolean singlePageMode) throws IOException {
+        this.pathToFile = path;
+        ArrayList<Integer> pageneedToBeSort = allPages;
+        if(allPages == null) {
+            pageneedToBeSort = this.listPages;
+        }
+
+        for(int test : pageneedToBeSort) {
+            System.out.println(test);
+        }
+
+
+
         if(path.length() > 0) {
             statutLabel.setText("Statut " + "Combining files..");
 
             File file = new File(path);
             this.loadedDocument = new PDDocument();
             this.loadImages(file);
-            this.mergeImages(allPages);
+            if (allPages != null) {
+                this.mergeImages(allPages,singlePageMode);
+            } else {
+                this.mergeImages(this.listPages, singlePageMode);
+            }
             loadedDocument.save(outPath);
             loadedDocument.close();
 
@@ -98,20 +120,21 @@ public class PDFEditor {
 
     void loadImages(File file) {
 
-        ListView filesList = new ListView();
-        filesList.setPrefHeight(200);
-        filesList.setPrefWidth(430);
+        listPages.clear();
+        ListView listView = (ListView) foundFilesPane.getChildren().get(0);
+        listView.getItems().clear();
 
-        foundFilesPane.getChildren().clear();
 
         File[] files = file.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File pathname, String name) {
 
                 if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".JPG")) {
-                    listPages.add(new File(pathname + "/" + name));
+                    int pageNumber = Integer.parseInt(name.substring(0, name.indexOf(".")));
 
-                    filesList.getItems().add(pathname + "/" + name);
+                    listPages.add(pageNumber);
+
+                    //listView.getItems().("Registering " + pathname + "\\" + name);
 
                     return true;
                 }
@@ -119,14 +142,16 @@ public class PDFEditor {
             }
         });
 
-        foundFilesPane.getChildren().add(filesList);
     }
 
-    private void mergeImages(ObservableList<File> allPages) {
+    private void mergeImages(ArrayList<Integer> allPages, Boolean singlePageMode) {
+        Collections.sort(allPages);
+
         //Collections.sort(listPages, Collections.reverseOrder());
-        for(File file : allPages) {
+        for(int path : allPages) {
             try {
-                newPDPage(file);
+                //System.out.println(file.getAbsolutePath());
+                newPDPage(new File(pathToFile + "\\" +path + ".jpg"), singlePageMode);
             } catch (IOException e) {
                 e.printStackTrace();
             }
