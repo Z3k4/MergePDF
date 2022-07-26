@@ -1,0 +1,22 @@
+.tabApp {
+    -fx-background-color: #323232;
+    -fx-text-inner-color:white;
+}
+
+.text {
+    -fx-text-fill:white;
+}
+
+.tab {
+    -fx-pref-width:100px;
+}
+
+.customButton {
+    -fx-background-color:#c38fff;
+    -fx-text-fill:black;
+}
+
+.textfield {
+    -fx-background-color:#323232;
+    -fx-border-color: transparent transparent white transparent;
+}

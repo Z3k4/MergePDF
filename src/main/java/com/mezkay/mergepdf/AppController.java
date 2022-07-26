@@ -1,8 +1,7 @@
 package com.mezkay.mergepdf;
 
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import com.mezkay.mergepdf.pdfeditor.PDFEditor;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -83,6 +82,29 @@ public class AppController implements Initializable {
         pdfEditor = new PDFEditor(statutLabel, foundFilesPane);
 
 
+        Label test = new Label("From folder");
+        test.setPrefSize(100,100);
+        test.setMinWidth(100);
+        test.setMinHeight(100);
+
+
+        ListView websiteDownload = new ListView();
+        websiteDownload.setId("webDownloadInfos");
+        ScrollPane pane = (ScrollPane)root.lookup("#websiteDownloadInfoPane");
+        pane.setContent(websiteDownload);
+
+        combineSource.getTabs().get(0).setGraphic(test);
+        combineSource.getTabs().get(1).setGraphic(new Label("From archive"));
+        combineSource.getTabs().get(2).setGraphic(new Label("From website"));
+
+        combineSource.setTabMinHeight(100);
+        combineSource.setTabMaxHeight(100);
+        combineSource.setTabMinWidth(100);
+        combineSource.setTabMaxWidth(100);
+
+        foundFilesPane.setVisible(false);
+
+
     }
 
     @FXML
@@ -127,43 +149,47 @@ public class AppController implements Initializable {
 
     @FXML
     protected void combineFiles() throws IOException {
-        int i = 0;
-        int selectedIndex = -1;
-        while(selectedIndex < 0 && i < combineSource.getTabs().size()) {
-            if(combineSource.getTabs().get(i).isSelected()) {
-                selectedIndex = i;
+        AppController appController = this;
+        System.out.println("Start ");
+        /*Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {*/
+                try {
 
-            }
-            i++;
-        }
-        if(selectedIndex == 0) {
+                    int i = 0;
+                    int selectedIndex = -1;
 
-            this.pdfEditor.combineFiles(textPath.getText(), outputFile.getText(), null, this.singlePageRadioBtn.isSelected());
-        } else if(selectedIndex == 1) {
-        }else if (selectedIndex == 2) {
+                    //Get active tab
 
-            WebsiteSource websource = new WebsiteSource(this, websiteSource.getText(),"test.pdf", minChapter.getText(), maxChapter.getText(), minPage.getText(), maxPage.getText());
+                    while (selectedIndex < 0 && i < combineSource.getTabs().size()) {
+                        //Combine from existing images
+                        if (combineSource.getTabs().get(i).isSelected()) {
+                            selectedIndex = i;
+                        }
+                        i++;
+                    }
 
-            statutLabel.setText("Downloading files..");
-            websource.getStatutProperty().addListener(new ChangeListener<String>() {
-                @Override
-                public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-                    statutList.getItems().add(observableValue.getValue());
-                }
-            });
+                    if (selectedIndex == 0) {
 
-            websource.run();
-            websource.onSucceededProperty().addListener(new ChangeListener() {
-                @Override
-                public void changed(ObservableValue observableValue, Object o, Object t1) {
-                    try {
-                        pdfEditor.combineFiles("", outputFile.getText(), websource.getImagesPath(), singlePageRadioBtn.isSelected());
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        pdfEditor.combineFiles(textPath.getText(), outputFile.getText(), null, singlePageRadioBtn.isSelected());
+                    } else if (selectedIndex == 1) {
+                        // TODO : Code for combine from archive
+                    } else if (selectedIndex == 2) {
+                        //Use website to get images
+                        WebsiteSource websource = new WebsiteSource(appController, websiteSource.getText(), "test.pdf", minChapter.getText(), maxChapter.getText(), minPage.getText(), maxPage.getText());
+                        //websource.downloadImages();
+                        websource.downloadAllImages();
                     }
                 }
-            });
-        };
+                catch(Exception ex) {
+                    ex.printStackTrace();
+                }
+
+           /* }
+        });
+        thread.setDaemon(true);
+        thread.start();*/
+
 
     }
 
@@ -205,6 +231,10 @@ public class AppController implements Initializable {
 
     public PDFEditor getPdfEditor() {
         return this.pdfEditor;
+    }
+
+    public Pane getRoot() {
+        return this.root;
     }
 
 }

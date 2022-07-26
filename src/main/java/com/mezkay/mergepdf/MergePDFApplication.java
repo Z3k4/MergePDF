@@ -7,13 +7,14 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class HelloApplication extends Application {
+public class MergePDFApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("main.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(MergePDFApplication.class.getResource("main.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("MergePDF");
         stage.setScene(scene);
+        stage.setResizable(false);
 
         AppController appController = fxmlLoader.getController();
         appController.setStage(stage);

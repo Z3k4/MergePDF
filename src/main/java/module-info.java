@@ -6,4 +6,6 @@ module com.mezkay.mergepdf {
 
     opens com.mezkay.mergepdf to javafx.fxml;
     exports com.mezkay.mergepdf;
+    exports com.mezkay.mergepdf.pdfeditor;
+    opens com.mezkay.mergepdf.pdfeditor to javafx.fxml;
 }

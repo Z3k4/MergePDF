@@ -1,4 +1,4 @@
-package com.mezkay.mergepdf;
+package com.mezkay.mergepdf.pdfeditor;
 
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -24,6 +24,8 @@ public class PDFEditor {
     private Pane foundFilesPane;
     private String pathToFile;
 
+
+
     public PDFEditor(Label statutLabel, Pane filesPane) {
         this.listPages = new ArrayList<>();
         this.loadedDocument = new PDDocument();
@@ -39,6 +41,8 @@ public class PDFEditor {
         PDImageXObject pdImage = PDImageXObject.createFromFile(file.getAbsolutePath(), this.loadedDocument);
         System.out.println("Adding " + file.getName());
 
+        //I prefer single page, double page is ugly for reading
+        //TODO determine if page is single or double, i'll get all pages with theirs format and compare
         if(!singlePageMode) {
             PDRectangle rectSize = new PDRectangle(pdImage.getWidth() / 2, pdImage.getHeight());
 
@@ -51,7 +55,6 @@ public class PDFEditor {
             contents.close();
 
             //Right
-
             PDPage newPageRight = new PDPage(rectSize);
             PDPageContentStream contentsRight = new PDPageContentStream(this.loadedDocument, newPageRight);
             PDRectangle sizeRectRight = newPageRight.getBBox();
@@ -60,13 +63,10 @@ public class PDFEditor {
             contentsRight.drawImage(pdImage, 0,0, pdImage.getWidth(), sizeRectRight.getHeight());
 
             //Second page
-
-
             contentsRight.close();
             this.loadedDocument.addPage(newPageLeft);
             this.loadedDocument.addPage(newPageRight);
         } else {
-
             PDRectangle rectSize = new PDRectangle(pdImage.getWidth(), pdImage.getHeight());
             PDPage newPage = new PDPage(rectSize);
 
@@ -77,7 +77,6 @@ public class PDFEditor {
             contents.drawImage(pdImage, 0,0, sizerect.getWidth(), sizerect.getHeight());
 
             //Second page
-
 
             contents.close();
             this.loadedDocument.addPage(newPage);
@@ -118,7 +117,7 @@ public class PDFEditor {
         }
     }
 
-    void loadImages(File file) {
+    public void loadImages(File file) {
 
         listPages.clear();
         ListView listView = (ListView) foundFilesPane.getChildren().get(0);
